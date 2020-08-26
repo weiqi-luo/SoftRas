@@ -13,7 +13,7 @@ class Renderer(nn.Module):
     def __init__(self, image_size=256, background_color=[0,0,0], near=1, far=100, 
                  anti_aliasing=True, fill_back=True, eps=1e-6,
                  camera_mode='projection',
-                 P=None, dist_coeffs=None, orig_size=512,
+                 P=None, dist_coeffs=None, orig_size=512, K=None,
                  perspective=True, viewing_angle=30, viewing_scale=1.0, 
                  eye=None, camera_direction=[0,0,1],
                  light_mode='surface',
@@ -30,12 +30,12 @@ class Renderer(nn.Module):
 
         # camera
         self.transform = sr.Transform(camera_mode, 
-                                      P, dist_coeffs, orig_size,
+                                      P, K, dist_coeffs, orig_size,
                                       perspective, viewing_angle, viewing_scale, 
                                       eye, camera_direction)
 
         # rasterization
-        self.rasterizer = sr.Rasterizer(image_size, background_color, near, far, 
+        self.rasterizer = sr.SoftRasterizer(image_size, background_color, near, far, 
                                         anti_aliasing, fill_back, eps)
 
     def forward(self, mesh, mode=None):
@@ -51,7 +51,7 @@ class SoftRenderer(nn.Module):
                  gamma_val=1e-4, aggr_func_rgb='softmax', aggr_func_alpha='prod',
                  texture_type='surface',
                  camera_mode='projection',
-                 P=None, dist_coeffs=None, orig_size=512,
+                 P=None, dist_coeffs=None, orig_size=512, K=None,
                  perspective=True, viewing_angle=30, viewing_scale=1.0, 
                  eye=None, camera_direction=[0,0,1],
                  light_mode='surface',
@@ -68,7 +68,7 @@ class SoftRenderer(nn.Module):
 
         # camera
         self.transform = sr.Transform(camera_mode, 
-                                      P, dist_coeffs, orig_size,
+                                      P, K, dist_coeffs, orig_size,
                                       perspective, viewing_angle, viewing_scale, 
                                       eye, camera_direction)
 
@@ -97,6 +97,14 @@ class SoftRenderer(nn.Module):
         mesh = self.transform(mesh)
         return self.rasterizer(mesh, mode)
 
-    def forward(self, vertices, faces, textures=None, mode=None, texture_type='surface'):
+    def render_fov(self, mesh, R, t, mode=None):
+        self.set_texture_mode(mesh.texture_type)
+        self.transform.set_transform(R=R,t=t)
+        mesh = self.lighting(mesh)
+        mesh = self.transform(mesh)
+        rgbd = self.rasterizer(mesh, mode)
+        return rgbd[:,:3,:,:], rgbd[:,-1,:,:][:,None,:,:], None
+
+    def forward(self, vertices, faces, textures=None, mode=None, texture_type='surface', R=None, t=None):
         mesh = sr.Mesh(vertices, faces, textures=textures, texture_type=texture_type)
         return self.render_mesh(mesh, mode)

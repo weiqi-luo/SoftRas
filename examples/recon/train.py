@@ -13,8 +13,9 @@ import time
 import os
 
 CLASS_IDS_ALL = (
-    '02691156,02828884,02933112')
-    # ,02958343,03001627,03211117,03636649,' +
+    '02958343')
+    # ,02828884,02933112')
+    # ,02691156,03001627,03211117,03636649,' +
     # '03691459,04090263,04256520,04379243,04401088,04530566')
 
 BATCH_SIZE = 64
@@ -143,7 +144,10 @@ def train():
             demo_v, demo_f = model.reconstruct(demo_image)
             srf.save_obj(demo_path, demo_v[0], demo_f[0])
             
-            imageio.imsave(os.path.join(image_output, '%07d_fake.png' % i), img_cvt(render_images[0][0]))
+            imageio.imsave(os.path.join(image_output, '%07d_fake0.png' % i), img_cvt(render_images[0][0]))
+            imageio.imsave(os.path.join(image_output, '%07d_fake1.png' % i), img_cvt(render_images[0][1]))
+            imageio.imsave(os.path.join(image_output, '%07d_fake2.png' % i), img_cvt(render_images[0][2]))
+            imageio.imsave(os.path.join(image_output, '%07d_fake3.png' % i), img_cvt(render_images[0][3]))
             imageio.imsave(os.path.join(image_output, '%07d_input.png' % i), img_cvt(images_a[0]))
 
         # print

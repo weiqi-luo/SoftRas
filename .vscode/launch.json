@@ -8,13 +8,24 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
+            // "program": "/home/luo/workspace/thesis_ws/SoftRas/examples/pose_estimation/train.py",
             "program": "/home/luo/workspace/thesis_ws/SoftRas/examples/recon/train.py",
             "console": "integratedTerminal",
             "args": [
                 "-eid",
                 "recon"
-                // "CUDA_VISIBLE_DEVICES=0"
             ]
         }
+        // {
+        //     "name": "Python: Current File",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "${file}",
+        //     "console": "integratedTerminal",
+        //     // "args": [
+        //     //     "-i",
+        //     //     "/home/luo/workspace/thesis_ws/SoftRas/data/YCB/019_pitcher_base/textured_simple.obj"
+        // // ]
+        // }
     ]
 }

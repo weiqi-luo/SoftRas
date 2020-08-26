@@ -25,6 +25,33 @@ class Projection(nn.Module):
         vertices = srf.projection(vertices, self.P, self.dist_coeffs, self.orig_size)
         return vertices
 
+class Projection_fov(nn.Module):
+    def __init__(self, K, orig_size):
+        super(Projection_fov, self).__init__()
+        fy = K[0,1,1]
+        fov = torch.atan( orig_size/(2*fy) )
+        self.width = torch.tan(fov/2)
+        self.R = None
+        self.t = None 
+
+    def forward(self, vertices, eps=1e-5):
+        # camera transform
+        # vertices = torch.matmul(vertices, R.transpose(2,1)) + t
+        if isinstance(self.t, np.ndarray):
+            self.t = torch.cuda.FloatTensor(self.t)
+        if isinstance(self.R, np.ndarray):
+            self.R = torch.cuda.FloatTensor(self.R)
+        self.t = self.t.view(-1,1,3)
+        vertices = vertices - self.t
+        vertices = torch.matmul(vertices, self.R.transpose(1,2))
+        
+        # compute fov
+        # compute perspective distortion
+        z = vertices[:, :, 2]
+        x = vertices[:, :, 0] / z / self.width
+        y = vertices[:, :, 1] / z / self.width
+        vertices = torch.stack((x,y,z), dim=2)
+        return vertices
 
 class LookAt(nn.Module):
     def __init__(self, perspective=True, viewing_angle=30, viewing_scale=1.0, eye=None):
@@ -72,7 +99,7 @@ class Look(nn.Module):
 
 
 class Transform(nn.Module):
-    def __init__(self, camera_mode='projection', P=None, dist_coeffs=None, orig_size=512,
+    def __init__(self, camera_mode='projection', P=None, K=None, dist_coeffs=None, orig_size=512,
                  perspective=True, viewing_angle=30, viewing_scale=1.0, 
                  eye=None, camera_direction=[0,0,1]):
         super(Transform, self).__init__()
@@ -80,12 +107,14 @@ class Transform(nn.Module):
         self.camera_mode = camera_mode
         if self.camera_mode == 'projection':
             self.transformer = Projection(P, dist_coeffs, orig_size)
+        if self.camera_mode == 'projection_fov':
+            self.transformer = Projection_fov(K, orig_size)
         elif self.camera_mode == 'look':
             self.transformer = Look(perspective, viewing_angle, viewing_scale, eye, camera_direction)
         elif self.camera_mode == 'look_at':
             self.transformer = LookAt(perspective, viewing_angle, viewing_scale, eye)
         else:
-            raise ValueError('Camera mode has to be one of projection, look or look_at')
+            raise ValueError('Camera mode has to be one of projection, projection_fov, look or look_at')
 
     def forward(self, mesh):
         mesh.vertices = self.transformer(mesh.vertices)
@@ -100,6 +129,12 @@ class Transform(nn.Module):
         if self.camera_mode not in ['look', 'look_at']:
             raise ValueError('Projection does not need to set eyes')
         self.transformer._eye = eyes
+
+    def set_transform(self, R, t):
+        if self.camera_mode != "projection_fov":
+            raise ValueError('Projection does not need to set eyes')
+        self.transformer.R = R
+        self.transformer.t = t
 
     @property
     def eyes(self):
