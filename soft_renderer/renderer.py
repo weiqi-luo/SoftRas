@@ -57,7 +57,7 @@ class SoftRenderer(nn.Module):
                  light_mode='surface',
                  light_intensity_ambient=0.5, light_color_ambient=[1,1,1],
                  light_intensity_directionals=0.5, light_color_directionals=[1,1,1],
-                 light_directions=[0,1,0]):
+                 light_directions=[0,1,0], fov=None):
         super(SoftRenderer, self).__init__()
 
         # light
@@ -70,7 +70,7 @@ class SoftRenderer(nn.Module):
         self.transform = sr.Transform(camera_mode, 
                                       P, K, dist_coeffs, orig_size,
                                       perspective, viewing_angle, viewing_scale, 
-                                      eye, camera_direction)
+                                      eye, camera_direction,fov=fov)
 
         # rasterization
         self.rasterizer = sr.SoftRasterizer(image_size, background_color, near, far, 
@@ -98,21 +98,11 @@ class SoftRenderer(nn.Module):
         return self.rasterizer(mesh, mode)
 
     def render_fov(self, mesh, R, t, mode=None):
+        mesh.reset_()
         self.set_texture_mode(mesh.texture_type)
         self.transform.set_transform(R=R,t=t)
         mesh = self.lighting(mesh)
         mesh = self.transform(mesh)
-        rgbd = self.rasterizer(mesh, mode)
-        return rgbd[:,:3,:,:], rgbd[:,-1,:,:][:,None,:,:], None
-
-    def render_fov1(self, mesh, R, t, mode=None):
-        self.set_texture_mode(mesh.texture_type)
-        self.transform.set_transform(R=R,t=t)
-        mesh = self.lighting(mesh)
-        mesh = self.transform(mesh)
-        return mesh
-
-    def render_fov2(self, mesh, mode=None):
         rgbd = self.rasterizer(mesh, mode)
         return rgbd[:,:3,:,:], rgbd[:,-1,:,:][:,None,:,:], None
 

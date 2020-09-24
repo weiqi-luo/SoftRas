@@ -26,13 +26,9 @@ class Projection(nn.Module):
         return vertices
 
 class Projection_fov(nn.Module):
-    def __init__(self, K, orig_size):
+    def __init__(self, fov):
         super(Projection_fov, self).__init__()
-        fy = K[0,1,1]
-        fov = torch.atan( orig_size/(2*fy) )
-        self.width = torch.tan(fov/2)
-        self.R = None
-        self.t = None 
+        self.width = math.tan(fov/2)
 
     def forward(self, vertices, eps=1e-5):
         # camera transform
@@ -101,14 +97,14 @@ class Look(nn.Module):
 class Transform(nn.Module):
     def __init__(self, camera_mode='projection', P=None, K=None, dist_coeffs=None, orig_size=512,
                  perspective=True, viewing_angle=30, viewing_scale=1.0, 
-                 eye=None, camera_direction=[0,0,1]):
+                 eye=None, camera_direction=[0,0,1],fov=None):
         super(Transform, self).__init__()
 
         self.camera_mode = camera_mode
         if self.camera_mode == 'projection':
             self.transformer = Projection(P, dist_coeffs, orig_size)
         if self.camera_mode == 'projection_fov':
-            self.transformer = Projection_fov(K, orig_size)
+            self.transformer = Projection_fov(fov)
         elif self.camera_mode == 'look':
             self.transformer = Look(perspective, viewing_angle, viewing_scale, eye, camera_direction)
         elif self.camera_mode == 'look_at':
