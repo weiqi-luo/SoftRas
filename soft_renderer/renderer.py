@@ -97,14 +97,14 @@ class SoftRenderer(nn.Module):
         mesh = self.transform(mesh)
         return self.rasterizer(mesh, mode)
 
-    def render_fov(self, mesh, R, t, mode=None):
+    def render_fov(self, mesh, R, t, mode=None, background_color=[0,0,0]):
         mesh.reset_()
         self.set_texture_mode(mesh.texture_type)
         self.transform.set_transform(R=R,t=t)
         mesh = self.lighting(mesh)
         mesh = self.transform(mesh)
         rgbd = self.rasterizer(mesh, mode)
-        return rgbd[:,:3,:,:], rgbd[:,-1,:,:][:,None,:,:], None
+        return rgbd[:,:3,:,:], None, rgbd[:,-1,:,:]
 
     def forward(self, vertices, faces, textures=None, mode=None, texture_type='surface', R=None, t=None):
         mesh = sr.Mesh(vertices, faces, textures=textures, texture_type=texture_type)
