@@ -70,7 +70,7 @@ class SoftRenderer(nn.Module):
         self.transform = sr.Transform(camera_mode, 
                                       P, K, dist_coeffs, orig_size,
                                       perspective, viewing_angle, viewing_scale, 
-                                      eye, camera_direction,fov=fov)
+                                      eye, camera_direction,fov)
 
         # rasterization
         self.rasterizer = sr.SoftRasterizer(image_size, background_color, near, far, 
@@ -99,6 +99,13 @@ class SoftRenderer(nn.Module):
 
     def render_fov(self, mesh, R, t, mode=None, background_color=[0,0,0]):
         mesh.reset_()
+
+        # expand dimension 
+        batch_size = R.shape[0]
+        mesh.vertices = mesh.vertices.expand(batch_size, *vertices.shape)
+        mesh.faces = mesh.faces.expand(batch_size, *faces.shape)
+        mesh.textures = mesh.textures.expand(batch_size, *textures.shape)
+
         self.set_texture_mode(mesh.texture_type)
         self.transform.set_transform(R=R,t=t)
         mesh = self.lighting(mesh)
