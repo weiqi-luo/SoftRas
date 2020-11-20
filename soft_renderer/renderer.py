@@ -102,16 +102,16 @@ class SoftRenderer(nn.Module):
 
         # expand dimension 
         batch_size = R.shape[0]
-        mesh.vertices = mesh.vertices.expand(batch_size, *vertices.shape)
-        mesh.faces = mesh.faces.expand(batch_size, *faces.shape)
-        mesh.textures = mesh.textures.expand(batch_size, *textures.shape)
+        mesh.vertices = mesh.vertices.expand(batch_size, *mesh.vertices.shape[1:])
+        mesh.faces = mesh.faces.expand(batch_size, *mesh.faces.shape[1:])
+        mesh.textures = mesh.textures.expand(batch_size, *mesh.textures.shape[1:])
 
         self.set_texture_mode(mesh.texture_type)
         self.transform.set_transform(R=R,t=t)
         mesh = self.lighting(mesh)
         mesh = self.transform(mesh)
         rgbd = self.rasterizer(mesh, mode)
-        return rgbd[:,:3,:,:], None, rgbd[:,-1,:,:]
+        return rgbd[:,:3,:,:], rgbd[:,-1,:,:], rgbd[:,-1,:,:]
 
     def forward(self, vertices, faces, textures=None, mode=None, texture_type='surface', R=None, t=None):
         mesh = sr.Mesh(vertices, faces, textures=textures, texture_type=texture_type)
